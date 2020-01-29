@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform:
+- EchoMacro
+- AWS::Serverless-2016-10-31
+Description: 'dynamodb-event-reader Sample SAM Template for dynamodb-event-reader
+  to interact with DynamoDB Events.
+
+  '
+Globals:
+  Function:
+    Timeout: 5
+Parameters:
+  S3Location:
+    Type: String
+    Default: s3://mn-w5-8436/macro.yaml
+    Description: The S3 location of template changes
+Resources:
+  ReadDynamoDBEvent:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://mn-cf-macro/e189ea2d4d4a6564427ff11d771916ad
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Events:
+        DynamoDBEvent:
+          Type: DynamoDB
+          Properties:
+            Stream:
+              Fn::GetAtt:
+              - DynamoDBTable
+              - StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      ProvisionedThroughput:
+        WriteCapacityUnits: 5
+        ReadCapacityUnits: 5
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      KeySchema:
+      - KeyType: HASH
+        AttributeName: id
